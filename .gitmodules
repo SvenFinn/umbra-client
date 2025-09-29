@@ -1,0 +1,3 @@
+[submodule "protos/dmxc-types"]
+	path = protos/dmxc-types
+	url = https://github.com/DMXControl/DMXControl3-Network-Interface.git
