@@ -8,6 +8,7 @@ import {
     UmbraLoginResponse_EReturnCode,
     UmbraLogoffRequest,
     ClientProgramInfo,
+    ClientInfo,
 } from '../generated/Common/Types/UmbraServiceTypes';
 import {
     status as grpcStatus,
@@ -19,6 +20,8 @@ import { UmbraDiscoveryClient } from './umbraDiscovery';
 import { ClientInfoStore } from '../ClientInfo';
 import { checkValidIp } from './ip';
 import { EventEmitter } from 'stream';
+import { UserClientClient } from '../generated/Client/UserClient';
+import { BidiStreamingHandler } from '@grpc/grpc-js/build/src/server-call';
 
 export class LoginException extends Error {
     public readonly returnCode: UmbraLoginResponse_EReturnCode;
@@ -50,7 +53,7 @@ export class UmbraConnectionClient extends EventEmitter {
         this.clientInfoStore = clientInfoStore;
     }
 
-    public async login(umbraServerName: string): Promise<void> {
+    public async login(umbraServerName: string, userName: string, passwordHash: string): Promise<void> {
         const discoveryClient = new UmbraDiscoveryClient();
         const candidate = await discoveryClient.getUmbraServerInfo(umbraServerName) || undefined;
         discoveryClient.close();
@@ -104,6 +107,7 @@ export class UmbraConnectionClient extends EventEmitter {
             this.clientService = client;
 
             await this.createConnectedClientService();
+            await this.createUserContext(userName, passwordHash);
 
             this.emit("connected")
 
@@ -136,6 +140,32 @@ export class UmbraConnectionClient extends EventEmitter {
             });
         });
     }
+
+    public createUserContext(userName: string, passwordHash: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!this.connected()) {
+                reject(new Error("Not connected to Umbra server"));
+            }
+            const client = new UserClientClient(this.connectionString!, ChannelCredentials.createInsecure());
+            client.bind({
+                username: userName,
+                requestId: "req-" + Date.now(),
+                passwordHash: passwordHash,
+            }, this.getMetadata(), (error, response) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (response.error || response.bindError) {
+                        reject(new Error(`User bind failed: ${response.error || response.bindError}`));
+                        return;
+                    }
+                    this.clientInfoStore.setUserContextId(response.userContextId!);
+                    resolve();
+                }
+            })
+        });
+    }
+
 
     public getMetadata(): Metadata {
         const metadata = new Metadata();

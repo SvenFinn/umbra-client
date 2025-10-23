@@ -90,8 +90,8 @@ export class DMXControlClient extends EventEmitter {
         return this.umbraClientsInfo.getClientByRuntimeId(runtimeId);
     }
 
-    public async login(serverName: string): Promise<void> {
-        return this.umbraConnection.login(serverName);
+    public async login(serverName: string, userName: string, passwordHash: string): Promise<void> {
+        return this.umbraConnection.login(serverName, userName, passwordHash);
     }
 
     public async disconnect(): Promise<void> {
@@ -104,6 +104,18 @@ export class DMXControlClient extends EventEmitter {
 
     public getMetadata(): Metadata {
         return this.umbraConnection.getMetadata();
+    }
+
+    public getRuntimeId(): string {
+        return this.clientInfoStore.getClientProgramInfo().clientInfo?.runtimeid || "";
+    }
+
+    public getUserContextId(): string | undefined {
+        return this.clientInfoStore.getUserContextId();
+    }
+
+    public getConnectionString(): string | undefined {
+        return this.umbraConnection.getConnectionString();
     }
 
     public get affinity(): AffinityClientClient | undefined {

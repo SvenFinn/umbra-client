@@ -1,22 +1,29 @@
 import { randomUUID } from "crypto";
 import { ClientInfo, ClientProgramInfo, EClientCapabilities, EClientType, ProgramInfo } from "./generated/Common/Types/UmbraServiceTypes";
 import { hostname, networkInterfaces } from "os";
+import { UserContextDescriptor } from "./generated/Common/Types/User/UserServiceTypes";
 
 
 export class ClientInfoStore {
     private programInfo: ProgramInfo;
     private umbraInfo: ClientInfo | undefined;
     private clientName: string;
+    private userContextId: string | undefined;
 
     private runtimeId: string = randomUUID();
 
     constructor(programInfo: ProgramInfo, clientName: string = "TypeScriptClient") {
         this.programInfo = programInfo;
         this.clientName = clientName;
+        this.userContextId = undefined;
     }
 
     public setUmbraInfo(umbraInfo: ClientInfo | undefined) {
         this.umbraInfo = umbraInfo;
+    }
+
+    public setUserContextId(userContextId: string) {
+        this.userContextId = userContextId;
     }
 
     public getClientProgramInfo(): ClientProgramInfo {
@@ -43,6 +50,10 @@ export class ClientInfoStore {
             umbraTimestampUTC: "0"
         }
 
+    }
+
+    public getUserContextId(): string | undefined {
+        return this.userContextId;
     }
 
 }
