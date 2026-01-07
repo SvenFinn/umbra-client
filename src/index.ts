@@ -1,46 +1,21 @@
-// import { randomUUID } from "node:crypto";
-// import { ClientProgramInfo, EClientType } from "./generated/Common/Types/UmbraServiceTypes";
-// import { UmbraConnectionClient } from "./umbra/umbraConnection";
-// import { ClientInfoStore } from "./ClientInfo";
-// import { UmbraPing } from "./umbra/umbraPing";
-// import { UmbraBroadcast } from "./umbra/umbraBroadcast";
-// import { UmbraClientsInfo } from "./umbra/umbraClientsInfo";
-
-// const clientInfoStore: ClientInfoStore = new ClientInfoStore({
-//     programmName: "TypeScriptClient",
-//     programVersion: "0.1.0",
-//     buildDate: Date.now().toString(),
-//     vendor: "Sven Finn",
-// });
-
-// async function main() {
-//     const client = new UmbraConnectionClient(clientInfoStore);
-//     await client.login("DefaultUnknownServerName");
-//     console.log("Logged in");
-
-//     const ping = new UmbraPing(client, clientInfoStore);
-//     const broadcast = new UmbraBroadcast(client, clientInfoStore);
-//     broadcast.on("broadcast", (msg) => {
-//         console.log("Received broadcast", msg);
-//     });
-//     const clientsInfo = new UmbraClientsInfo(client);
-
-// }
-
-// main()
-
-import { DMXControlClient } from "./umbra";
+import { CueAddFromProgrammerRequest_EAddType } from "./generated/Common/Types/Cuelist/CuelistServiceTypes";
+import { ClientManager } from "./umbra/clientManager";
+import { ClientStore } from "./umbra/store";
 
 async function main() {
-    const client = new DMXControlClient("TESTING", {
-        buildDate: Date.now().toString(),
-        programVersion: "0.1.0",
-        programmName: "TypeScriptClient",
-        vendor: "Sven Finn",
-    });
-    await client.login("DefaultUnknownServerName");
+    const clientStore = new ClientStore("TypeScriptUmbraClient", undefined);
+    const clientManager = new ClientManager(clientStore);
+    await clientManager.login("DefaultUnknownServerName");
     console.log("Logged in");
+    // await clientManager.connectedClientService?.sendChatMessage("Hello from TypeScript Umbra Client!");
+    // await clientManager.audioClient?.stopAllPlayers();
+    // console.log((await clientManager.cueListClient!.getCuelists(["62ba1b69-44af-40c0-a731-a4d6a7672680"])));
+    // await clientManager.cueListClient?.stopAllCuelists();
+    console.log(await clientManager.attachableClient?.getAttachables());
 
+    await clientManager.close();
 }
+
+
 
 main();
