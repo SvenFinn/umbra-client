@@ -8,13 +8,11 @@ import { ClientReadableStream } from "@grpc/grpc-js";
 
 
 //TODO: This does not work currently
-export class AudioClient extends BaseClient {
-    private client: AudioClientClient;
+export class AudioClient extends BaseClient<AudioClientClient> {
     private changeStream: ClientReadableStream<PlayerThreadChangedMessage> | undefined;
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new AudioClientClient(store.connectionString!, store.credentials!);
+        super(store, AudioClientClient);
     }
 
     public async getPlayers(ids: string[] = []): Promise<PlayerThreadDescriptor[]> {
@@ -22,7 +20,7 @@ export class AudioClient extends BaseClient {
             throw new Error("No user context set, cannot get player threads");
         }
         return new Promise((resolve, reject) => {
-            this.client.getPlayerThreads({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, this.store.getMetadata(), (err, response) => {
+            this.client.getPlayerThreads({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -36,7 +34,7 @@ export class AudioClient extends BaseClient {
             throw new Error("No user context set, cannot get audio metadata");
         }
         return new Promise((resolve, reject) => {
-            this.client.requestAllAudioMetadata({ requestId: this.store.createRequestId(), userContextId: this.store.userContextId!, idFilter: ids }, this.store.getMetadata(), (err, response) => {
+            this.client.requestAllAudioMetadata({ requestId: this.store.createRequestId(), userContextId: this.store.userContextId!, idFilter: ids }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -50,7 +48,7 @@ export class AudioClient extends BaseClient {
             throw new Error("No user context set, cannot get sound output infos");
         }
         return new Promise((resolve, reject) => {
-            this.client.requestAllSoundOutputInfos({ requestId: this.store.createRequestId(), userContextId: this.store.userContextId!, idFilter: [] }, this.store.getMetadata(), (err, response) => {
+            this.client.requestAllSoundOutputInfos({ requestId: this.store.createRequestId(), userContextId: this.store.userContextId!, idFilter: [] }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -80,7 +78,7 @@ export class AudioClient extends BaseClient {
                 soundOutputInfo: undefined,
                 soundOutputInfoSet: false,
                 ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -139,7 +137,7 @@ export class AudioClient extends BaseClient {
 
     public receivePlayerUpdates(): ClientReadableStream<PlayerThreadChangedMessage> {
         if (!this.changeStream) {
-            this.changeStream = this.client.receivePlayerThreadChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.changeStream = this.client.receivePlayerThreadChanges({ requestId: this.store.createRequestId() });
         }
         return this.changeStream;
     }
@@ -151,6 +149,6 @@ export class AudioClient extends BaseClient {
 
     public async close() {
         await gracefulStopReadableStream(this.changeStream);
-        this.client.close();
+        await super.close();
     }
 }

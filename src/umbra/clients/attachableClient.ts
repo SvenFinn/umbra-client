@@ -9,12 +9,10 @@ import { ClientStore } from "../store";
 
 //TODO: TESTING
 
-export class AttachableClient extends BaseClient {
-    private client: AttachableClientClient;
+export class AttachableClient extends BaseClient<AttachableClientClient> {
     private changeStream: ClientReadableStream<AttachableChangeMessage> | undefined;
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new AttachableClientClient(store.connectionString!, store.credentials!);
+        super(store, AttachableClientClient);
     }
 
     /**
@@ -31,7 +29,7 @@ export class AttachableClient extends BaseClient {
         return new Promise((resolve, reject) => {
             // idFilter is a required field but results in an empty response populated
             // DMXC-3.3.1
-            this.client.getAttachables({ idFilter: [], requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, this.store.getMetadata(), (err, response) => {
+            this.client.getAttachables({ idFilter: [], requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -61,7 +59,7 @@ export class AttachableClient extends BaseClient {
         return new Promise((resolve, reject) => {
             // ProptertyId seems to get ignored by the server
             // DMXC-3.3.1
-            this.client.canAttachTo({ requestId: this.store.createRequestId(), attachable, ...request, propertyId: "" }, this.store.getMetadata(), (err, response) => {
+            this.client.canAttachTo({ requestId: this.store.createRequestId(), attachable, ...request, propertyId: "" }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -105,7 +103,7 @@ export class AttachableClient extends BaseClient {
                 newName: "",
                 id: "",
                 ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -157,7 +155,7 @@ export class AttachableClient extends BaseClient {
     // it only returns undefined. 
     public async getAttachablePreset(): Promise<AttachableParameterBag | undefined> {
         return new Promise((resolve, reject) => {
-            this.client.getAttachablePreset({ requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.getAttachablePreset({ requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -176,7 +174,7 @@ export class AttachableClient extends BaseClient {
                     meta: attachable,
                     parameters
                 }
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -199,7 +197,7 @@ export class AttachableClient extends BaseClient {
                     groupId,
                     propertyId
                 }
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -221,7 +219,7 @@ export class AttachableClient extends BaseClient {
                     groupId,
                     propertyId
                 }
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -232,13 +230,13 @@ export class AttachableClient extends BaseClient {
 
     public receiveAttachableChanges(): ClientReadableStream<AttachableChangeMessage> {
         if (!this.changeStream) {
-            this.changeStream = this.client.receiveAttachableChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.changeStream = this.client.receiveAttachableChanges({ requestId: this.store.createRequestId() });
         }
         return this.changeStream;
     }
 
     public async close() {
         await gracefulStopReadableStream(this.changeStream);
-        this.client.close();
+        await super.close();
     }
 }

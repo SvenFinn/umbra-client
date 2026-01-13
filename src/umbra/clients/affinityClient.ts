@@ -16,12 +16,10 @@ import { ClientStore } from "../store";
  * Each method wraps an asynchronous RPC call and returns a `Promise` that resolves
  * with the server response or rejects with an error if the request fails.
  */
-export class AffinityClient extends BaseClient {
-    private client: AffinityClientClient;
+export class AffinityClient extends BaseClient<AffinityClientClient> {
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new AffinityClientClient(store.connectionString!, store.credentials!);
+        super(store, AffinityClientClient);
     }
 
     /**
@@ -33,7 +31,7 @@ export class AffinityClient extends BaseClient {
      */
     public async getAffinityClasses(): Promise<string[]> {
         return new Promise((resolve, reject) => {
-            this.client.getAffinityClasses({ requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.getAffinityClasses({ requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -54,7 +52,7 @@ export class AffinityClient extends BaseClient {
         return new Promise((resolve, reject) => {
             // Why is the className passed as the requestId??
             // DMXC-3.3.1
-            this.client.getAffinityClassReferenceList({ requestId: className }, this.store.getMetadata(), (err, response) => {
+            this.client.getAffinityClassReferenceList({ requestId: className }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -67,7 +65,7 @@ export class AffinityClient extends BaseClient {
     // Why does it take a response as a request?
     public async getAffinityList(req: GetAffinityListRequestResponse): Promise<GetAffinityListRequestResponse> {
         return new Promise((resolve, reject) => {
-            this.client.getAffinityList(req, this.store.getMetadata(), (err, response) => {
+            this.client.getAffinityList(req, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -78,7 +76,7 @@ export class AffinityClient extends BaseClient {
 
     public async setUserDefinedAffinityList(className: string, referenceObjectId: string, itemListId: string = ""): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.client.setUserDefinedAffinityList({ className, referenceObjectId, itemListId }, this.store.getMetadata(), (err, response) => {
+            this.client.setUserDefinedAffinityList({ className, referenceObjectId, itemListId }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -94,16 +92,12 @@ export class AffinityClient extends BaseClient {
     // It only ever returns an empty list
     public async getUserDeffinedAffinityLists(className: string): Promise<GetUserDefinedAffinityListsResponse> {
         return new Promise((resolve, reject) => {
-            this.client.getUserDefinedAffinityLists({ requestId: className }, this.store.getMetadata(), (err, response) => {
+            this.client.getUserDefinedAffinityLists({ requestId: className }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
                 resolve(response);
             });
         });
-    }
-
-    public async close() {
-        this.client.close();
     }
 }

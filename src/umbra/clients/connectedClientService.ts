@@ -6,18 +6,16 @@ import { BroadcastMessage } from "../../generated/Common/Types/BroadcastServiceT
 import { BaseClient } from "../baseClient";
 import { gracefulStopDuplexStream, translateToString } from "../helpers/request";
 
-export class ConnectedClientService extends BaseClient {
+export class ConnectedClientService extends BaseClient<ConnectedClientServiceClient> {
     private pingCounter: number = 0;
     private pingInterval: NodeJS.Timeout | undefined;
     private pingChannel: ClientDuplexStream<PingPong, PingPong>;
     private broadcastChannel: ClientDuplexStream<BroadcastMessage, BroadcastMessage>;
-    private client: ConnectedClientServiceClient;
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new ConnectedClientServiceClient(store.connectionString!, store.credentials!);
-        this.broadcastChannel = this.client.sendBroadcast(this.store.getMetadata());
-        this.pingChannel = this.client.ping(this.store.getMetadata());
+        super(store, ConnectedClientServiceClient);
+        this.broadcastChannel = this.client.sendBroadcast();
+        this.pingChannel = this.client.ping();
         this.pingChannel.on("data", (pong: PingPong) => {
             if (pong.clientname !== this.store.clientName) {
                 pong.responder = this.store.clientName || "";
@@ -44,7 +42,7 @@ export class ConnectedClientService extends BaseClient {
                     readyToWork,
                     receiveAndDisplayMessages
                 }
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -95,6 +93,6 @@ export class ConnectedClientService extends BaseClient {
             gracefulStopDuplexStream(this.broadcastChannel),
             gracefulStopDuplexStream(this.pingChannel)
         ]);
-        this.client.close();
+        await super.close();
     }
 }

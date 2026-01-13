@@ -3,11 +3,13 @@
     "version": "1.0.0",
     "description": "Client for the DMXControl 3 Software",
     "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "nodemon --exec 'ts-node' src/index.ts",
         "proto:generate": "mkdir -p src/generated && npx protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=src/generated --ts_proto_opt=esModuleInterop=true,forceLong=string,outputServices=grpc-js -I=protos/dmxc-types $(find protos/dmxc-types -name \"*.proto\")",
-        "build": "npm run proto:generate && tsc"
+        "build": "npm run proto:generate && tsc",
+        "build:windows": "tsc"
     },
     "repository": {
         "type": "git",

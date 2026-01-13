@@ -8,13 +8,11 @@ import { BaseClient } from "../baseClient";
 import { gracefulStopReadableStream, translateToString } from "../helpers/request";
 import { ClientStore } from "../store";
 
-export class CueClient extends BaseClient {
-    private client: CueClientClient;
+export class CueClient extends BaseClient<CueClientClient> {
     private cueChangeStream: ClientReadableStream<CueChangedMessage> | undefined;
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new CueClientClient(store.connectionString!, store.credentials!);
+        super(store, CueClientClient);
     }
 
     private async setCueValue(cueId: string, parentId: string, request: Partial<SetCueValueRequest>): Promise<void> {
@@ -24,7 +22,7 @@ export class CueClient extends BaseClient {
                 cueId: cueId,
                 parentContainerId: parentId,
                 ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -101,7 +99,7 @@ export class CueClient extends BaseClient {
                 parentParentContainerId: parentId,
                 cueEntryId: cueEntryId,
                 ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 console.log(response);
                 if (err) {
                     return reject(err);
@@ -153,7 +151,7 @@ export class CueClient extends BaseClient {
                 cueId,
                 parentContainerId: parentId,
                 mode: mode
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -171,7 +169,7 @@ export class CueClient extends BaseClient {
                 requestId: this.store.createRequestId(),
                 cueId,
                 parentContainerId: parentId
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -191,7 +189,7 @@ export class CueClient extends BaseClient {
                 cueId,
                 parentContainerId: parentId,
                 targetIndex
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -213,7 +211,7 @@ export class CueClient extends BaseClient {
                 targetParentContainerId: targetParentId,
                 targetIndex,
                 copyNameTemplate: newName,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -228,13 +226,13 @@ export class CueClient extends BaseClient {
 
     public receiveCueChanges(): ClientReadableStream<CueChangedMessage> {
         if (!this.cueChangeStream) {
-            this.cueChangeStream = this.client.receiveCueChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.cueChangeStream = this.client.receiveCueChanges({ requestId: this.store.createRequestId() });
         }
         return this.cueChangeStream;
     }
 
     public async close(): Promise<void> {
         await gracefulStopReadableStream(this.cueChangeStream);
-        this.client.close();
+        await super.close();
     }
 }

@@ -5,13 +5,11 @@ import { gracefulStopReadableStream, translateToString } from "../helpers/reques
 import { ClientStore } from "../store";
 import { BackgroundTaskChangedMessage } from "../../generated/Common/Types/BackgroundTaskServiceTypes";
 
-export class BackgroundTaskClient extends BaseClient {
-    private client: BackgroundTaskClientClient;
+export class BackgroundTaskClient extends BaseClient<BackgroundTaskClientClient> {
     private taskChangeStream: ClientReadableStream<BackgroundTaskChangedMessage> | undefined;
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new BackgroundTaskClientClient(store.connectionString!, store.credentials!);
+        super(store, BackgroundTaskClientClient);
     }
 
     public async pauseBackgroundTask(taskId: string): Promise<void> {
@@ -20,7 +18,7 @@ export class BackgroundTaskClient extends BaseClient {
                 backgroundTaskId: taskId,
                 requestId: this.store.createRequestId(),
                 pause: true,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -38,7 +36,7 @@ export class BackgroundTaskClient extends BaseClient {
                 backgroundTaskId: taskId,
                 requestId: this.store.createRequestId(),
                 continue: true,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -52,14 +50,14 @@ export class BackgroundTaskClient extends BaseClient {
 
     public receiveBackgroundTaskChanges(): ClientReadableStream<BackgroundTaskChangedMessage> {
         if (!this.taskChangeStream) {
-            this.taskChangeStream = this.client.receiveBackgroundTaskChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.taskChangeStream = this.client.receiveBackgroundTaskChanges({ requestId: this.store.createRequestId() });
         }
         return this.taskChangeStream;
     }
 
     public async close(): Promise<void> {
         await gracefulStopReadableStream(this.taskChangeStream);
-        this.client.close();
+        await super.close();
     }
 }
 

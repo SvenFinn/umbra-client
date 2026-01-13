@@ -6,13 +6,11 @@ import { UserContextChangedMessage } from "../../generated/Common/Types/User/Use
 import { BaseClient } from "../baseClient";
 import { gracefulStopReadableStream, translateToString } from "../helpers/request";
 
-export class UserClient extends BaseClient {
-    private client: UserClientClient;
+export class UserClient extends BaseClient<UserClientClient> {
     private contextChangeStream: ClientReadableStream<UserContextChangedMessage> | undefined;
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new UserClientClient(store.connectionString!, store.credentials!);
+        super(store, UserClientClient);
     }
 
     public async getUserContext(userContextId: string | undefined = this.store.userContextId): Promise<UserContextDescriptor | undefined> {
@@ -22,7 +20,7 @@ export class UserClient extends BaseClient {
         return new Promise((resolve, reject) => {
             // idFilter is a required field but seems to be ignored by the server
             // DMXC-3.3.1
-            this.client.getUserContext({ idFilter: [], userContextId: userContextId, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.getUserContext({ idFilter: [], userContextId: userContextId, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -33,7 +31,7 @@ export class UserClient extends BaseClient {
 
     public receiveUserContextChanges(): ClientReadableStream<UserContextChangedMessage> {
         if (!this.contextChangeStream) {
-            this.contextChangeStream = this.client.receiveUserContextChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.contextChangeStream = this.client.receiveUserContextChanges({ requestId: this.store.createRequestId() });
         }
         return this.contextChangeStream;
     }
@@ -43,7 +41,7 @@ export class UserClient extends BaseClient {
             throw new Error("User context already set, cannot bind new context");
         }
         return new Promise((resolve, reject) => {
-            this.client.bind({ passwordHash, username, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.bind({ passwordHash, username, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -71,7 +69,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot destroy context");
         }
         return new Promise((resolve, reject) => {
-            this.client.destroy({ userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.destroy({ userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -89,7 +87,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot select devices and groups");
         }
         return new Promise((resolve, reject) => {
-            this.client.selectDevicesAndGroups({ idFilter: ids, userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.selectDevicesAndGroups({ idFilter: ids, userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -108,7 +106,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot select executor page");
         }
         return new Promise((resolve, reject) => {
-            this.client.selectExecutorPage({ idFilter: [index], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.selectExecutorPage({ idFilter: [index], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -127,7 +125,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot select executor");
         }
         return new Promise((resolve, reject) => {
-            this.client.selectExecutor({ idFilter: [index], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.selectExecutor({ idFilter: [index], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -146,7 +144,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot fix executors");
         }
         return new Promise((resolve, reject) => {
-            this.client.fixExecutors({ idsToFix: ids, idsToUnfix: [], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.fixExecutors({ idsToFix: ids, idsToUnfix: [], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -165,7 +163,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot fix executors");
         }
         return new Promise((resolve, reject) => {
-            this.client.fixExecutors({ idsToUnfix: ids, idsToFix: [], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.fixExecutors({ idsToUnfix: ids, idsToFix: [], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -184,7 +182,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot select timecode");
         }
         return new Promise((resolve, reject) => {
-            this.client.selectTimecode({ idFilter: [id], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.selectTimecode({ idFilter: [id], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -203,7 +201,7 @@ export class UserClient extends BaseClient {
             throw new Error("No user context set, cannot select track");
         }
         return new Promise((resolve, reject) => {
-            this.client.selectTrack({ idFilter: [id], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.selectTrack({ idFilter: [id], userContextId: this.store.userContextId!, requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -219,6 +217,6 @@ export class UserClient extends BaseClient {
 
     public async close() {
         await gracefulStopReadableStream(this.contextChangeStream);
-        this.client.close();
+        await super.close();
     }
 }

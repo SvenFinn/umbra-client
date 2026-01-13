@@ -5,18 +5,15 @@ import { MacroBoardButtonPressed, MacroBoardDescriptor, MacroBoardProfileDescrip
 import { BaseClient } from "../baseClient";
 import { gracefulStopReadableStream, translateToString } from "../helpers/request";
 import { ClientStore } from "../store";
-import { v4 as uuidv4 } from "uuid";
 import { MacroBoardChangedMessage, MacroBoardProfileChangedMessage } from "../../generated/Common/Types/Input/MacroBoard/MacroBoardServiceCRUDTypes";
 
-export class MacroBoardClient extends BaseClient {
-    private client: MacroBoardClientClient;
+export class MacroBoardClient extends BaseClient<MacroBoardClientClient> {
     private proxies: Set<string> = new Set<string>();
     private boardChangeStream: ClientReadableStream<MacroBoardChangedMessage> | undefined;
     private profileChangeStream: ClientReadableStream<MacroBoardProfileChangedMessage> | undefined;
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new MacroBoardClientClient(store.connectionString!, store.credentials!);
+        super(store, MacroBoardClientClient);
     }
 
     public async getMacroBoards(ids: string[] = []): Promise<MacroBoardDescriptor[]> {
@@ -24,7 +21,7 @@ export class MacroBoardClient extends BaseClient {
             throw new Error("No user context set, cannot get macro boards");
         }
         return new Promise((resolve, reject) => {
-            this.client.getMacroBoards({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, this.store.getMetadata(), (err, response) => {
+            this.client.getMacroBoards({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -43,7 +40,7 @@ export class MacroBoardClient extends BaseClient {
             throw new Error("No user context set, cannot get macro board profiles");
         }
         return new Promise((resolve, reject) => {
-            this.client.getMacroBoardProfiles({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, this.store.getMetadata(), (err, response) => {
+            this.client.getMacroBoardProfiles({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -57,7 +54,7 @@ export class MacroBoardClient extends BaseClient {
             throw new Error("No user context set, cannot get macro board profile templates");
         }
         return new Promise((resolve, reject) => {
-            this.client.getMacroBoardProfileTemplates({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, this.store.getMetadata(), (err, response) => {
+            this.client.getMacroBoardProfileTemplates({ idFilter: ids, requestId: this.store.createRequestId(), userContextId: this.store.userContextId! }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -75,7 +72,7 @@ export class MacroBoardClient extends BaseClient {
                     width,
                     height
                 }
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -97,7 +94,7 @@ export class MacroBoardClient extends BaseClient {
                 requestId: this.store.createRequestId(),
                 profileNameTemplate: name,
                 macroBoard: board
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -115,7 +112,7 @@ export class MacroBoardClient extends BaseClient {
                 requestId: this.store.createRequestId(),
                 profileNameTemplate: name,
                 copyFromTemplate: templateId
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -133,7 +130,7 @@ export class MacroBoardClient extends BaseClient {
                 requestId: this.store.createRequestId(),
                 profileNameTemplate: name,
                 copyFromProfile: profileId
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -150,7 +147,7 @@ export class MacroBoardClient extends BaseClient {
             this.client.deleteMacroBoardProfile({
                 requestId: this.store.createRequestId(),
                 profileId: id
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -169,7 +166,7 @@ export class MacroBoardClient extends BaseClient {
                 profileId: id,
                 name: newName,
                 buttonPressed: [], // Should potentially read the current state?
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -188,7 +185,7 @@ export class MacroBoardClient extends BaseClient {
                 profileId: id,
                 number: newNumber,
                 buttonPressed: [], // Should potentially read the current state?
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -207,7 +204,7 @@ export class MacroBoardClient extends BaseClient {
                 requestId: this.store.createRequestId(),
                 profileId: profileId,
                 buttonPressed: buttons,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -219,20 +216,19 @@ export class MacroBoardClient extends BaseClient {
         });
     }
 
-    public async createMacroBoardProxy(width: number, height: number): Promise<string> {
+    public async createMacroBoardProxy(name: string, width: number, height: number): Promise<string> {
         if (!this.store.userContextId) {
             throw new Error("No user context set, cannot create macro board proxy");
         }
-        const id = uuidv4();
         return new Promise((resolve, reject) => {
             this.client.createOrUpdateOrDeleteMacroBoardProxy({
                 requestId: this.store.createRequestId(),
                 userContextId: this.store.userContextId!,
                 runtimeId: this.store.runtimeId!,
                 changeType: EChangeType.Added,
-                macroBoardId: id,
+                macroBoardId: name,
                 macroBoard: {
-                    id: id,
+                    id: name,
                     width: width,
                     height: height,
                 },
@@ -241,14 +237,14 @@ export class MacroBoardClient extends BaseClient {
                     y: 0,
                     pressed: false
                 }]
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
                 if (!response.ok) {
                     return reject(new Error(translateToString(response.message) || "Failed to create macro board proxy"));
                 }
-                this.proxies.add(id);
+                this.proxies.add(name);
                 resolve(response.id);
             });
         });
@@ -267,7 +263,7 @@ export class MacroBoardClient extends BaseClient {
                 macroBoardId: macroBoardId,
                 buttonPressed: buttons,
                 macroBoard: undefined,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -292,7 +288,7 @@ export class MacroBoardClient extends BaseClient {
                 macroBoardId: macroBoardId,
                 buttonPressed: [],
                 macroBoard: undefined,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -305,16 +301,16 @@ export class MacroBoardClient extends BaseClient {
         });
     }
 
-    public receiveMacroBoardChanges(): ClientReadableStream<MacroBoardChangedMessage> {
+    public receiveMacroBoardChanges(id: string): ClientReadableStream<MacroBoardChangedMessage> {
         if (!this.boardChangeStream) {
-            this.boardChangeStream = this.client.receiveMacroBoardChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.boardChangeStream = this.client.receiveMacroBoardChanges({ requestId: id });
         }
         return this.boardChangeStream;
     }
 
-    public receiveMacroBoardProfileChanges(): ClientReadableStream<MacroBoardProfileChangedMessage> {
+    public receiveMacroBoardProfileChanges(id: string): ClientReadableStream<MacroBoardProfileChangedMessage> {
         if (!this.profileChangeStream) {
-            this.profileChangeStream = this.client.receiveMacroBoardProfileChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.profileChangeStream = this.client.receiveMacroBoardProfileChanges({ requestId: id });
         }
         return this.profileChangeStream;
     }
@@ -325,6 +321,6 @@ export class MacroBoardClient extends BaseClient {
             gracefulStopReadableStream(this.boardChangeStream),
             ...Array.from(this.proxies).map(proxyId => this.deleteMacroBoardProxy(proxyId))
         ]);
-        this.client.close();
+        await super.close();
     }
 }

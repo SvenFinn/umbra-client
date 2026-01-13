@@ -14,7 +14,7 @@ export class ClientStore {
     public readonly runtimeId: string = uuidv4();
     private requestCounter: number = 0;
 
-    constructor(clientName: string = "TypeScriptClient", clientSpec: Partial<ProgramInfo> | undefined) {
+    constructor(clientName: string = "TypeScriptClient", clientSpec?: Partial<ProgramInfo>) {
         this.clientName = clientName;
         this.credentials = ChannelCredentials.createInsecure();
         this.programInfo = {
@@ -49,12 +49,6 @@ export class ClientStore {
             connectionLatencyMicroSeconds: 0,
             umbraTimestampUTC: "0"
         }
-    }
-
-    public getMetadata(): Metadata {
-        const metadata = new Metadata();
-        metadata.set("sessionID", this.sessionId || "");
-        return metadata;
     }
 
     public createRequestId(): string {

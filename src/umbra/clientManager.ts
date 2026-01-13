@@ -13,14 +13,16 @@ import { BackgroundTaskClient } from "./clients/backgroundTaskClient";
 import { CueClient } from "./clients/cueClient";
 import { CueListClient } from "./clients/cueListClient";
 import { UserContextDescriptor } from "../generated/Common/Types/User/UserServiceTypes";
+import { ProgramInfo } from "../generated/Common/Types/UmbraServiceTypes";
+import { Client } from "@grpc/grpc-js";
 
 export class ClientManager {
     private clients: Map<string, any> = new Map();
     private store: ClientStore;
     private discoveryClient: UmbraDiscoveryClient;
 
-    constructor(store: ClientStore) {
-        this.store = store;
+    constructor(clientName: string = "TypeScriptClient", clientSpec?: Partial<ProgramInfo>) {
+        this.store = new ClientStore(clientName, clientSpec);
         this.discoveryClient = new UmbraDiscoveryClient();
     }
 
@@ -43,7 +45,7 @@ export class ClientManager {
         return await this.userClient?.bindContext(userName, password);
     }
 
-    private createClient<T extends BaseClient>(cls: new (store: ClientStore) => T): T | undefined {
+    private createClient<T extends BaseClient<Client>>(cls: new (store: ClientStore) => T): T | undefined {
         if (!this.store.connectionString) {
             return undefined;
         }

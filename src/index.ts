@@ -3,8 +3,7 @@ import { ClientManager } from "./umbra/clientManager";
 import { ClientStore } from "./umbra/store";
 
 async function main() {
-    const clientStore = new ClientStore("TypeScriptUmbraClient", undefined);
-    const clientManager = new ClientManager(clientStore);
+    const clientManager = new ClientManager("TypeScriptUmbraClient");
     await clientManager.login("DefaultUnknownServerName");
     console.log("Logged in");
     // await clientManager.connectedClientService?.sendChatMessage("Hello from TypeScript Umbra Client!");

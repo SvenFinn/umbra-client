@@ -12,14 +12,12 @@ import { TriggerValueData } from "../../generated/Common/Types/Cue/CueTriggerSer
 
 export type ProgrammerFilter = Omit<ProgrammerFilterPredicate, "userContextId">;
 
-export class CueListClient extends BaseClient {
-    private client: CuelistClientClient;
+export class CueListClient extends BaseClient<CuelistClientClient> {
     private cueListChangeStream: ClientReadableStream<CuelistChangedMessage> | undefined;
     private cueListProgressStreams: ClientDuplexStream<CuelistProgressStateChangeRequest, CuelistProgressStateChangeMessage>[] = [];
 
     constructor(store: ClientStore) {
-        super(store);
-        this.client = new CuelistClientClient(store.connectionString!, store.credentials!);
+        super(store, CuelistClientClient);
     }
 
     /**
@@ -34,7 +32,7 @@ export class CueListClient extends BaseClient {
             throw new Error("User context not set, cannot get cuelists");
         }
         return new Promise((resolve, reject) => {
-            this.client.getCuelists({ requestId: this.store.createRequestId(), idFilter: ids, userContextId: this.store.userContextId! }, this.store.getMetadata(), (err, response) => {
+            this.client.getCuelists({ requestId: this.store.createRequestId(), idFilter: ids, userContextId: this.store.userContextId! }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -53,7 +51,7 @@ export class CueListClient extends BaseClient {
      */
     public async createCueList(name: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            this.client.createCuelist({ requestId: this.store.createRequestId(), cuelistNameTemplate: name, copyFromCuelist: "" }, this.store.getMetadata(), (err, response) => {
+            this.client.createCuelist({ requestId: this.store.createRequestId(), cuelistNameTemplate: name, copyFromCuelist: "" }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -76,7 +74,7 @@ export class CueListClient extends BaseClient {
      */
     public async copyCueList(id: string, newName: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            this.client.createCuelist({ requestId: this.store.createRequestId(), cuelistNameTemplate: newName, copyFromCuelist: id }, this.store.getMetadata(), (err, response) => {
+            this.client.createCuelist({ requestId: this.store.createRequestId(), cuelistNameTemplate: newName, copyFromCuelist: id }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -106,7 +104,7 @@ export class CueListClient extends BaseClient {
 
     public async deleteCueList(id: string, dependencies?: DependencyData): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.client.deleteCuelist({ requestId: this.store.createRequestId(), cuelistId: id, dependencies: dependencies }, this.store.getMetadata(), (err, response) => {
+            this.client.deleteCuelist({ requestId: this.store.createRequestId(), cuelistId: id, dependencies: dependencies }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -128,7 +126,7 @@ export class CueListClient extends BaseClient {
                 speedFactor: undefined,
                 tempFader: undefined,
                 ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -200,7 +198,7 @@ export class CueListClient extends BaseClient {
                 cuelistId: cueListId,
                 action,
                 index: index
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -365,7 +363,7 @@ export class CueListClient extends BaseClient {
                 macro: undefined,
                 timecodeId: undefined
                 , ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -392,11 +390,10 @@ export class CueListClient extends BaseClient {
                 type: CueAddFromProgrammerRequest_EAddType.NONE,
                 triggerValue: undefined,
                 ...request
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
-                console.log(response);
                 if (!response.ok) {
                     return reject(new Error(translateToString(response.message) || "Failed to modify programmer cue"));
                 }
@@ -535,7 +532,7 @@ export class CueListClient extends BaseClient {
                 cuelistId: cueListId,
                 userContextId: this.store.userContextId!,
                 index,
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -549,7 +546,7 @@ export class CueListClient extends BaseClient {
 
     public async getCuelistProgress(): Promise<CuelistProgressStateChangeMessage | undefined> {
         return new Promise((resolve, reject) => {
-            this.client.getCuelistProgress({ requestId: this.store.createRequestId() }, this.store.getMetadata(), (err, response) => {
+            this.client.getCuelistProgress({ requestId: this.store.createRequestId() }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -563,13 +560,13 @@ export class CueListClient extends BaseClient {
 
     public receiveCuelistChanges(): ClientReadableStream<CuelistChangedMessage> {
         if (!this.cueListChangeStream) {
-            this.cueListChangeStream = this.client.receiveCuelistChanges({ requestId: this.store.createRequestId() }, this.store.getMetadata());
+            this.cueListChangeStream = this.client.receiveCuelistChanges({ requestId: this.store.createRequestId() });
         }
         return this.cueListChangeStream;
     }
 
     public receiveCuelistProgress(cuelistIds: string[] = []): ClientDuplexStream<CuelistProgressStateChangeRequest, CuelistProgressStateChangeMessage> {
-        const stream = this.client.receiveCuelistProgressChanges(this.store.getMetadata());
+        const stream = this.client.receiveCuelistProgressChanges();
         stream.write({ cuelistIds });
         this.cueListProgressStreams.push(stream);
         return stream;
@@ -580,7 +577,7 @@ export class CueListClient extends BaseClient {
             this.client.allCuelistAction({
                 requestId: this.store.createRequestId(),
                 action
-            }, this.store.getMetadata(), (err, response) => {
+            }, (err, response) => {
                 if (err) {
                     return reject(err);
                 }
@@ -604,6 +601,6 @@ export class CueListClient extends BaseClient {
         await Promise.all([
             gracefulStopReadableStream(this.cueListChangeStream),
             ...this.cueListProgressStreams.map(stream => gracefulStopDuplexStream(stream))]);
-        this.client.close();
+        await super.close();
     }
 }
